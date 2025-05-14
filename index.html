@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shaffer Con Inc.</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f0f2f5; color: #1c1e21; line-height: 1.6; }
+        .site-container { max-width: 1100px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 100vh; display: flex; flex-direction: column; }
+        header.site-header { background-color: #3b5998; /* Facebook Blue -ish */ color: #ffffff; padding: 20px 30px; text-align: center; }
+        header.site-header h1 { margin: 0; font-size: 2.4em; font-weight: bold; }
+        header.site-header a { color: #ffffff; text-decoration: none; }
+        nav#dynamic-menu-container { background-color: #f7f7f7; padding: 15px 30px; text-align: center; border-bottom: 1px solid #ddd; }
+        nav#dynamic-menu-container label { font-weight: 500; color: #4b4f56; margin-right: 8px; }
+        nav#dynamic-menu-container select { padding: 10px 15px; border-radius: 6px; border: 1px solid #ccd0d5; background-color: #fff; font-size: 1em; min-width: 200px; }
+        main#page-content { flex-grow: 1; padding: 30px 40px; background-color: #fff; }
+        main#page-content h1, main#page-content h2, main#page-content h3 { color: #1d2129; margin-top: 0; margin-bottom: 0.8em; font-weight: 600; }
+        main#page-content h1 { font-size: 2em; border-bottom: 1px solid #eee; padding-bottom: 0.5em;}
+        main#page-content h2 { font-size: 1.6em; }
+        main#page-content h3 { font-size: 1.3em; }
+        main#page-content p { margin-bottom: 1.2em; color: #333; font-size: 1.05em; }
+        main#page-content ul, main#page-content ol { margin-bottom: 1.2em; padding-left: 25px; }
+        main#page-content li { margin-bottom: 0.6em; }
+        footer.site-footer { background-color: #e9ebee; border-top: 1px solid #ddd; color: #606770; text-align: center; padding: 25px; font-size: 0.95em; }
+
+        /* Form Styling */
+        #page-content form { display: flex; flex-direction: column; gap: 15px; }
+        #page-content .form-field { display: flex; flex-direction: column; gap: 5px; }
+        #page-content .form-row { display: flex; flex-direction: row; gap: 15px; align-items: flex-end; }
+        #page-content .form-row .form-field { flex: 1; } /* Fields in a row share space */
+        #page-content label { font-weight: 500; color: #333; font-size: 0.95em; }
+        #page-content input[type="text"],
+        #page-content input[type="email"],
+        #page-content input[type="tel"],
+        #page-content input[type="password"],
+        #page-content input[type="url"],
+        #page-content input[type="search"],
+        #page-content input[type="number"],
+        #page-content select,
+        #page-content textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccd0d5;
+            border-radius: 6px;
+            box-sizing: border-box; /* Important for width 100% */
+            font-size: 1em;
+            background-color: #f5f6f7;
+        }
+        #page-content textarea { min-height: 80px; resize: vertical; }
+        #page-content button,
+        #page-content input[type="submit"],
+        #page-content input[type="button"],
+        #page-content .button { /* Adding .button class for a-tags styled as buttons */
+            padding: 10px 20px;
+            background-color: #4a69bb; /* A slightly different blue */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+        #page-content button:hover,
+        #page-content input[type="submit"]:hover,
+        #page-content input[type="button"]:hover,
+        #page-content .button:hover {
+            background-color: #3b5998; /* Darken on hover */
+        }
+        /* Align button to the right if it's the last child of a form or a general container */
+        #page-content form > button:last-child,
+        #page-content form > input[type="submit"]:last-child {
+            align-self: flex-start; /* Default for stacked forms */
+        }
+        #page-content .form-actions { /* Optional: a div to group form actions like submit/cancel */
+            display: flex;
+            justify-content: flex-end; /* Aligns items (e.g., buttons) to the right */
+            gap: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="site-container">
+        <header class="site-header">
+            <a href="javascript:void(0)" onclick="navigateTo('/')"><h1>Shaffer Con Inc.</h1></a>
+        </header>
+
+        <nav id="dynamic-menu-container">
+            <!-- Dropdown menu will be injected here by JavaScript -->
+            <p>Loading menu...</p>
+        </nav>
+
+        <main id="page-content">
+            <!-- Main page content will be injected here by JavaScript -->
+            <p>Loading page content...</p>
+        </main>
+
+        <footer class="site-footer">
+            <p>&copy; <span id="current-year"></span> Shaffer Con Inc. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        async function fetchPageData(path) {
+            const contentElement = document.getElementById('page-content');
+            const menuContainer = document.getElementById('dynamic-menu-container');
+            
+            contentElement.innerHTML = '<p>Loading page content...</p>';
+            // Do not clear menu immediately, wait for new menu data
+
+            const fetchPath = path === '/' || path === '' ? '/' : path.startsWith('/') ? path : '/' + path;
+            try {
+                const response = await fetch(`/get_page_data?path=${encodeURIComponent(fetchPath)}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                // Inject main content
+                contentElement.innerHTML = data.main_content_html || '<p>No content received.</p>';
+
+                // Build and inject dynamic menu
+                buildAndInjectMenu(data.menu_items || [], fetchPath, menuContainer);
+
+            } catch (error) {
+                contentElement.innerHTML = `<h1>Error Loading Page</h1><p>Could not fetch page data for <code>${fetchPath}</code>. ${error.message}</p>`;
+                menuContainer.innerHTML = '<p>Menu unavailable due to page load error.</p>'; // Clear or set error for menu
+                console.error("Failed to fetch page data:", error);
+            }
+        }
+
+        function buildAndInjectMenu(menuItems, currentPath, menuContainerElement) {
+            if (!menuItems.length) {
+                menuContainerElement.innerHTML = '<p><em>No navigation items available.</em></p>';
+                return;
+            }
+            let optionsHtml = '';
+            menuItems.forEach(item => {
+                const selectedAttr = (item.path === currentPath || (item.path === '/' && currentPath === '/')) ? ' selected' : '';
+                optionsHtml += `<option value="${item.path}"${selectedAttr}>${item.name}</option>`;
+            });
+
+            const dropdownJs = "onchange=\"if(this.value && this.value !== window.location.pathname) navigateTo(this.value);\"";
+            menuContainerElement.innerHTML = `
+                <label for="page-navigation-select">Quick Navigation:</label>
+                <select name="page-navigation-select" id="page-navigation-select" ${dropdownJs}>
+                    <option value="">Select a page...</option>
+                    ${optionsHtml}
+                </select>
+            `;
+        }
+
+        function navigateTo(path) {
+            const displayPath = path === '/' || path === '' ? '/' : path.startsWith('/') ? path : '/' + path;
+            if (window.location.pathname !== displayPath || window.location.search !== '') { // Avoid pushing same state if only hash changes or no change
+                 history.pushState({ path: displayPath }, '', displayPath);
+            }
+            fetchPageData(displayPath);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialPath = window.location.pathname;
+            fetchPageData(initialPath);
+        });
+
+        window.addEventListener('popstate', (event) => {
+            const path = event.state && event.state.path ? event.state.path : window.location.pathname;
+            fetchPageData(path);
+        });
+    </script>
+</body>
+</html> 
