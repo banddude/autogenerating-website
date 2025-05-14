@@ -89,47 +89,43 @@ def get_menu_items_from_cache(current_path):
 @app.route('/get_page_data')
 def get_page_data_endpoint():
     path_param = request.args.get('path', '/')
-    # Normalize path for consistency (e.g. ensure leading slash, handle empty as root)
     normalized_path = ('/' + path_param.strip('/')) if path_param and path_param != '/' else '/'
 
     cache_content_filename = sanitize_path_to_cache_filename(normalized_path)
     cache_content_filepath = os.path.join(CONTENT_CACHE_DIR, cache_content_filename)
 
     main_html_content = ""
-    menu_items = []
 
     if os.path.exists(cache_content_filepath):
         try:
             with open(cache_content_filepath, 'r', encoding='utf-8') as f:
                 main_html_content = f.read()
-            print(f"app.py: Served content for '{normalized_path}' from cache: {cache_content_filepath}", file=sys.stderr)
+            # print(f"app.py (API): Served content for '{normalized_path}' from cache.", file=sys.stderr)
         except Exception as e:
-            print(f"app.py Error reading content cache for '{normalized_path}': {e}. Will try to regenerate.", file=sys.stderr)
-            main_html_content = "" # Force regeneration
+            print(f"app.py (API) Error reading content cache for '{normalized_path}': {e}. Will try to regenerate.", file=sys.stderr)
+            main_html_content = ""
 
-    if not main_html_content:
-        print(f"app.py: Content cache miss for '{normalized_path}'. Calling page.generate_llm_content.", file=sys.stderr)
+    if not main_html_content.strip(): # If cache miss or cache read failed and main_html_content is empty
+        # print(f"app.py (API): Content cache miss or empty for '{normalized_path}'. Calling page.generate_llm_content.", file=sys.stderr)
         try:
-            # page.py is now a module, call its function directly
-            main_html_content = generate_llm_content(normalized_path) 
-            if main_html_content:
+            main_html_content = generate_llm_content(normalized_path)
+            if main_html_content.strip():
                 try:
                     with open(cache_content_filepath, 'w', encoding='utf-8') as f:
                         f.write(main_html_content)
-                    print(f"app.py: Saved generated content for '{normalized_path}' to cache: {cache_content_filepath}", file=sys.stderr)
+                    # print(f"app.py (API): Saved generated content for '{normalized_path}' to cache.", file=sys.stderr)
                 except Exception as e:
-                    print(f"app.py Error writing content to cache for '{normalized_path}': {e}", file=sys.stderr)
+                    print(f"app.py (API) Error writing content to cache for '{normalized_path}': {e}", file=sys.stderr)
             else:
-                 main_html_content = "<h1>Error</h1><p>Failed to generate content for this page.</p>"
+                main_html_content = "" # Ensure empty if LLM provides no content
         except Exception as e:
-            print(f"app.py Exception calling generate_llm_content for '{normalized_path}': {e}", file=sys.stderr)
-            main_html_content = f'<h1>Server Error</h1><p>Error during content generation: {str(e)}</p>'
+            print(f"app.py (API) Exception calling generate_llm_content for '{normalized_path}': {e}", file=sys.stderr)
+            main_html_content = "" # Ensure empty on error
     
-    # Always generate menu items fresh after content handling, so it reflects the current cache state
     menu_items = get_menu_items_from_cache(normalized_path)
 
     return jsonify({
-        "main_content_html": main_html_content,
+        "main_content_html": main_html_content.strip(),
         "menu_items": menu_items
     })
 
@@ -137,8 +133,67 @@ def get_page_data_endpoint():
 @app.route('/')
 @app.route('/<path:text>')
 def serve_index(text=None):
-    # This ensures that index.html is served for any path, allowing client-side routing to take over.
-    return send_from_directory('.', 'index.html')
+    path_param = text if text else '/'
+    normalized_path = ('/' + path_param.strip('/')) if path_param and path_param != '/' else '/'
+
+    main_html_content = "" # Default to empty string
+    cache_content_filename = sanitize_path_to_cache_filename(normalized_path)
+    cache_content_filepath = os.path.join(CONTENT_CACHE_DIR, cache_content_filename)
+
+    if os.path.exists(cache_content_filepath):
+        try:
+            with open(cache_content_filepath, 'r', encoding='utf-8') as f:
+                main_html_content = f.read()
+            # print(f"app.py (SSR): Served content for '{normalized_path}' from cache: {cache_content_filepath}", file=sys.stderr)
+        except Exception as e:
+            print(f"app.py (SSR) Error reading content cache for '{normalized_path}': {e}. Will try to regenerate.", file=sys.stderr)
+            main_html_content = "" # Ensure it is empty before regeneration attempt
+            try:
+                main_html_content = generate_llm_content(normalized_path)
+                if main_html_content.strip(): # Check if content is not just whitespace
+                    with open(cache_content_filepath, 'w', encoding='utf-8') as f:
+                        f.write(main_html_content)
+                else:
+                    main_html_content = "" # Explicitly set to empty if LLM returns nothing
+            except Exception as gen_e:
+                print(f"app.py (SSR) Error during content regeneration: {gen_e}", file=sys.stderr)
+                main_html_content = "" # Empty on error
+    else:
+        # print(f"app.py (SSR): Content cache miss for '{normalized_path}'. Calling page.generate_llm_content.", file=sys.stderr)
+        try:
+            main_html_content = generate_llm_content(normalized_path) 
+            if main_html_content.strip(): # Check if content is not just whitespace
+                try:
+                    with open(cache_content_filepath, 'w', encoding='utf-8') as f:
+                        f.write(main_html_content)
+                    # print(f"app.py (SSR): Saved generated content for '{normalized_path}' to cache: {cache_content_filepath}", file=sys.stderr)
+                except Exception as e:
+                    print(f"app.py (SSR) Error writing content to cache for '{normalized_path}': {e}", file=sys.stderr)
+            else:
+                 main_html_content = "" # Explicitly set to empty if LLM returns nothing
+        except Exception as e:
+            print(f"app.py (SSR) Exception calling generate_llm_content for '{normalized_path}': {e}", file=sys.stderr)
+            main_html_content = "" # Empty on error
+
+    # The menu item generation should remain in get_page_data_endpoint, not here in serve_index for SSR.
+    # For SSR, we only care about the main_html_content.
+
+    try:
+        index_html_path = os.path.join(os.path.dirname(__file__), 'index.html')
+        with open(index_html_path, 'r', encoding='utf-8') as f:
+            index_html_template = f.read()
+        
+        placeholder_with_fallback = "<!-- MAIN_CONTENT_SSR -->\n            <p>Loading page content...</p> <!-- This will be overwritten by SSR or client-side JS -->"
+        final_html = index_html_template.replace(placeholder_with_fallback, main_html_content.strip())
+        
+        return final_html
+    except Exception as e:
+        print(f"app.py (SSR) Error reading or processing index.html template: {e}", file=sys.stderr)
+        # Return the original template or a very basic error page if template processing fails, to avoid breaking site entirely
+        try:
+            return send_from_directory('.', 'index.html') # Fallback to serving raw index
+        except Exception:
+            return "<h1>Major Server Error</h1><p>Site template unrenderable.</p>", 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3006, debug=True) 

@@ -6,21 +6,9 @@ import re
 
 # --- CONFIGURATION LOADING --- START --- 
 CONFIG_FILE_PATH = os.path.join(os.path.dirname(__file__), 'config.json')
-DEFAULT_CONFIG = {
-    "llm_model": "gpt-4.1-nano",
-    "website_profile": {
-        "company_name": "Shaffer Con Inc. (Default)",
-        "business_type": "Electrical Services (Default)",
-        "location": "Our Town (Default)",
-        "specialties": ["General electrical work"],
-        "values": ["Quality", "Reliability"],
-        "target_audience": "Everyone (Default)",
-        "site_tone": "Professional and friendly (Default)"
-    },
-    "system_prompt_template": "You are a content writer for {company_name}. Please write concise HTML content for the path '{current_page_path_for_llm}'. No images or external links. Focus on text content using p, h2, h3, ul, ol, li. Provide ONLY the HTML for the main content block."
-}
 
-config = DEFAULT_CONFIG
+
+config = CONFIG_FILE_PATH
 try:
     with open(CONFIG_FILE_PATH, 'r') as f:
         config = json.load(f)
@@ -32,9 +20,9 @@ except json.JSONDecodeError as e:
 except Exception as e:
     print(f"page.py An unexpected error occurred loading {CONFIG_FILE_PATH}: {e}. Using default configuration.", file=sys.stderr)
 
-LLM_MODEL = config.get("llm_model", DEFAULT_CONFIG["llm_model"])
-WEBSITE_PROFILE = config.get("website_profile", DEFAULT_CONFIG["website_profile"])
-SYSTEM_PROMPT_TEMPLATE = config.get("system_prompt_template", DEFAULT_CONFIG["system_prompt_template"])
+LLM_MODEL = config.get("llm_model")
+WEBSITE_PROFILE = config.get("website_profile")
+SYSTEM_PROMPT_TEMPLATE = config.get("system_prompt_template")
 # --- CONFIGURATION LOADING --- END --- 
 
 client = OpenAI() # Assumes OPENAI_API_KEY is in environment
@@ -77,26 +65,36 @@ def generate_llm_content(current_path_for_content):
         )
         main_content_html = response.choices[0].message.content
         
-        # Basic validation/cleanup: ensure it's not trying to be a full document.
-        if main_content_html.strip().lower().startswith("<!doctype html>") or "<body" in main_content_html.lower():
-            print(f"page.py Warning: LLM returned full document structure for '{llm_path_query}'. Attempting to extract main content or providing error.", file=sys.stderr)
-            # This is a simplistic extraction attempt, might need more robust parsing
-            body_match = re.search(r"<body[^>]*>(.*?)</body>", main_content_html, re.IGNORECASE | re.DOTALL)
-            main_match = re.search(r"<main[^>]*>(.*?)</main>", main_content_html, re.IGNORECASE | re.DOTALL)
-            if main_match:
-                main_content_html = main_match.group(1)
-            elif body_match:
-                main_content_html = body_match.group(1) # Fallback to body if main not found
-            else: # If cannot extract, fallback to an error message to avoid breaking the page structure.
-                main_content_html = "<h1>Content Error</h1><p>The AI tried to generate a full page instead of content. Please try again or check template.</p>"
+        # --- Start Content Extraction/Cleanup ---
+        # Attempt to remove any outer html/body/main tags to get only the inner content.
+        # This makes the LLM output more robust to accidental full-page generation.
+        temp_content = main_content_html.strip()
+        
+        # Try to find content within <main> tags first
+        main_match = re.search(r"<main[^>]*>(.*?)</main>", temp_content, re.IGNORECASE | re.DOTALL)
+        if main_match:
+            temp_content = main_match.group(1).strip()
+        else:
+            # If no <main>, try to find content within <body> tags
+            body_match = re.search(r"<body[^>]*>(.*?)</body>", temp_content, re.IGNORECASE | re.DOTALL)
+            if body_match:
+                print(f"page.py Warning: LLM returned content with <body> but no <main> for '{llm_path_query}'. Extracted from <body>.", file=sys.stderr)
+                temp_content = body_match.group(1).strip()
+            elif temp_content.lower().startswith("<!doctype html>") or temp_content.lower().startswith("<html>"):
+                print(f"page.py Warning: LLM returned full HTML document for '{llm_path_query}' but couldn't find <main> or <body>. Setting to empty.", file=sys.stderr)
+                temp_content = "" # Return empty string
+            # If it wasn't a full doc but some other structure we didn't want, it remains temp_content
+        
+        main_content_html = temp_content
+        # --- End Content Extraction/Cleanup ---
 
         if not main_content_html.strip(): # If after all that, it's empty
-             main_content_html = f"<h1>{llm_path_query.title()}</h1><p>Content is being generated for this page.</p>"
+            print(f"page.py: Content for '{llm_path_query}' is empty after generation/cleanup. Returning empty string.", file=sys.stderr)
+            main_content_html = "" # Return empty string
 
     except Exception as e:
-        print(f"page.py Error calling OpenAI API for path '{current_path_for_content}': {e}. Using fallback content.", file=sys.stderr)
-        title = llm_path_query.replace('_',' ').title()
-        main_content_html = f"<h2>Error Generating Content for {title}</h2><p>Could not load content due to an API error or unexpected issue. Details: {str(e)}</p>"
+        print(f"page.py Error calling OpenAI API for path '{current_path_for_content}': {e}. Returning empty string.", file=sys.stderr)
+        main_content_html = "" # Return empty string
     
     return main_content_html
 
