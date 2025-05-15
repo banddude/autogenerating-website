@@ -23,6 +23,7 @@ except Exception as e:
 LLM_MODEL = config.get("llm_model")
 WEBSITE_PROFILE = config.get("website_profile")
 SYSTEM_PROMPT_TEMPLATE = config.get("system_prompt_template")
+BASE_URL_PLACEHOLDER = "{{SITE_BASE_URL}}" # Define the placeholder
 # --- CONFIGURATION LOADING --- END --- 
 
 client = OpenAI() # Assumes OPENAI_API_KEY is in environment
@@ -44,8 +45,13 @@ def generate_llm_content(current_path_for_content):
             values_list=", ".join(profile.get("values", [])),
             target_audience=profile.get("target_audience", "Our Customers"),
             site_tone=profile.get("site_tone", "default"),
-            current_page_path_for_llm=llm_path_query
+            current_page_path_for_llm=llm_path_query,
+            base_url_placeholder=BASE_URL_PLACEHOLDER
         )
+        # Manually add instruction for base URL if it's homepage for now
+        if llm_path_query == 'homepage' and '{{SITE_BASE_URL}}' not in formatted_system_prompt:
+            formatted_system_prompt += f"\n\nWhen referring to the site's main address (e.g., in a welcome message), use the placeholder: {BASE_URL_PLACEHOLDER}."
+
         print(f"page.py DEBUG: Formatted System Prompt for path '{llm_path_query}':\\n---START PROMPT---\\n{formatted_system_prompt}\\n---END PROMPT---", file=sys.stderr) # DEBUG LINE
     except KeyError as e:
         print(f"page.py Error: Missing key in website_profile for system prompt formatting: {e}. Using basic prompt.", file=sys.stderr)
@@ -97,6 +103,74 @@ def generate_llm_content(current_path_for_content):
         main_content_html = "" # Return empty string
     
     return main_content_html
+
+def generate_content_from_ai_search(search_query):
+    """
+    Generates a new URL path and HTML content based on a search query, 
+    returning a JSON object.
+    """
+    profile = WEBSITE_PROFILE
+    
+    # Construct a system prompt instructing the AI.
+    # This prompt asks for a URL path and content, and specifies JSON output.
+    # It also includes the existing HTML generation rules.
+    
+    search_system_prompt = f"""You are an expert content writer and URL strategist for {profile.get("company_name", "Our Company")}, an {profile.get("business_type", "Our Business")}.
+The company is located at {profile.get("location", "Our Location")}.
+Specialties: {", ".join(profile.get("specialties", []))}.
+Core Values: {", ".join(profile.get("values", []))}.
+Target Audience: {profile.get("target_audience", "Our Customers")}.
+Site Tone: {profile.get("site_tone", "default")}.
+
+Based on the user's search query: \"{search_query}\", you must:
+1.  Invent a concise, SEO-friendly, and relevant URL path for a new page that would address this query. The path should start with a '/' and use hyphens for separation (e.g., /ev-chargers/commercial-installation-process).
+2.  Generate the HTML for the MAIN CONTENT of this new page.
+3.  Your entire response MUST be a single valid JSON object with two keys: "url_path" (string) and "content" (string, containing the HTML).
+
+HTML Content Rules:
+-   DO NOT include <!DOCTYPE html>, <html>, <head>, <body> tags, or any header, navigation, or footer sections.
+-   DO NOT include a surrounding <main> tag or <main id="page-content"> tag.
+-   Just provide the raw HTML content that would go *inside* the website's existing <main id="page-content"> section.
+-   Use semantic HTML5 tags. Keep the content minimal and directly relevant to the query.
+-   ABSOLUTELY NO IMAGES (<img> tags) OR EXTERNAL HYPERLINKS (<a> tags with http/https).
+-   INTERNAL LINKS: You CAN and SHOULD link to other relevant pages within this website. Use an anchor tag like this: <a href="/target-page-path" onclick="event.preventDefault(); navigateTo('/target-page-path')">Link Text</a>. Replace '/target-page-path' with the actual partial path.
+-   FORM STRUCTURE: Only if the query explicitly implies user input (e.g., "request a quote for EV charger"), use: <div class="form-field"><label>...</label><input...></div>. For multiple fields in a row: <div class="form-row">...</div>.
+-   Focus on clear, concise text: paragraphs, headings (h2, h3), lists (ul, ol, li).
+Example JSON output:
+{{
+  "url_path": "/example-services/new-offering",
+  "content": "<h2>New Offering Title</h2><p>Details about the new offering based on the search query...</p>"
+}}
+"""
+
+    ai_response_json = {}
+    try:
+        # print(f"page.py: Sending AI search request for query: '{search_query}'", file=sys.stderr)
+        response = client.chat.completions.create(
+            model=LLM_MODEL,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": search_system_prompt},
+                {"role": "user", "content": f"Generate a new page URL and content for my search: {search_query}"}
+            ]
+        )
+        raw_response_content = response.choices[0].message.content
+        # print(f"page.py DEBUG: Raw AI search response: {raw_response_content}", file=sys.stderr)
+
+        try:
+            ai_response_json = json.loads(raw_response_content)
+            if not isinstance(ai_response_json, dict) or "url_path" not in ai_response_json or "content" not in ai_response_json:
+                print(f"page.py Error: AI search response is not the expected JSON object for query '{search_query}'. Response: {raw_response_content}", file=sys.stderr)
+                return {"error": "Invalid JSON structure from AI.", "details": raw_response_content}
+        except json.JSONDecodeError as e:
+            print(f"page.py Error: Failed to decode JSON from AI search response for query '{search_query}': {e}. Response: {raw_response_content}", file=sys.stderr)
+            return {"error": "JSON decode error from AI response.", "details": raw_response_content}
+
+    except Exception as e:
+        print(f"page.py Error calling OpenAI API for AI search query '{search_query}': {e}", file=sys.stderr)
+        return {"error": f"OpenAI API call failed: {str(e)}"}
+    
+    return ai_response_json
 
 if __name__ == "__main__":
     path_arg = "/"

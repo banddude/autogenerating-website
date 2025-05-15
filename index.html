@@ -3,93 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shaffer Con Inc.</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f0f2f5; color: #1c1e21; line-height: 1.6; }
-        .site-container { max-width: 1100px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 100vh; display: flex; flex-direction: column; }
-        header.site-header { background-color: #3b5998; /* Facebook Blue -ish */ color: #ffffff; padding: 20px 30px; text-align: center; }
-        header.site-header h1 { margin: 0; font-size: 2.4em; font-weight: bold; }
-        header.site-header a { color: #ffffff; text-decoration: none; }
-        nav#dynamic-menu-container { background-color: #f7f7f7; padding: 15px 30px; text-align: center; border-bottom: 1px solid #ddd; }
-        nav#dynamic-menu-container label { font-weight: 500; color: #4b4f56; margin-right: 8px; }
-        nav#dynamic-menu-container select { padding: 10px 15px; border-radius: 6px; border: 1px solid #ccd0d5; background-color: #fff; font-size: 1em; min-width: 200px; }
-        main#page-content { flex-grow: 1; padding: 30px 40px; background-color: #fff; }
-        main#page-content h1, main#page-content h2, main#page-content h3 { color: #1d2129; margin-top: 0; margin-bottom: 0.8em; font-weight: 600; }
-        main#page-content h1 { font-size: 2em; border-bottom: 1px solid #eee; padding-bottom: 0.5em;}
-        main#page-content h2 { font-size: 1.6em; }
-        main#page-content h3 { font-size: 1.3em; }
-        main#page-content p { margin-bottom: 1.2em; color: #333; font-size: 1.05em; }
-        main#page-content ul, main#page-content ol { margin-bottom: 1.2em; padding-left: 25px; }
-        main#page-content li { margin-bottom: 0.6em; }
-        footer.site-footer { background-color: #e9ebee; border-top: 1px solid #ddd; color: #606770; text-align: center; padding: 25px; font-size: 0.95em; }
-
-        /* Form Styling */
-        #page-content form { display: flex; flex-direction: column; gap: 15px; }
-        #page-content .form-field { display: flex; flex-direction: column; gap: 5px; }
-        #page-content .form-row { display: flex; flex-direction: row; gap: 15px; align-items: flex-end; }
-        #page-content .form-row .form-field { flex: 1; } /* Fields in a row share space */
-        #page-content label { font-weight: 500; color: #333; font-size: 0.95em; }
-        #page-content input[type="text"],
-        #page-content input[type="email"],
-        #page-content input[type="tel"],
-        #page-content input[type="password"],
-        #page-content input[type="url"],
-        #page-content input[type="search"],
-        #page-content input[type="number"],
-        #page-content select,
-        #page-content textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ccd0d5;
-            border-radius: 6px;
-            box-sizing: border-box; /* Important for width 100% */
-            font-size: 1em;
-            background-color: #f5f6f7;
-        }
-        #page-content textarea { min-height: 80px; resize: vertical; }
-        #page-content button,
-        #page-content input[type="submit"],
-        #page-content input[type="button"],
-        #page-content .button { /* Adding .button class for a-tags styled as buttons */
-            padding: 10px 20px;
-            background-color: #4a69bb; /* A slightly different blue */
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 1em;
-            font-weight: 500;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-        }
-        #page-content button:hover,
-        #page-content input[type="submit"]:hover,
-        #page-content input[type="button"]:hover,
-        #page-content .button:hover {
-            background-color: #3b5998; /* Darken on hover */
-        }
-        /* Align button to the right if it's the last child of a form or a general container */
-        #page-content form > button:last-child,
-        #page-content form > input[type="submit"]:last-child {
-            align-self: flex-start; /* Default for stacked forms */
-        }
-        #page-content .form-actions { /* Optional: a div to group form actions like submit/cancel */
-            display: flex;
-            justify-content: flex-end; /* Aligns items (e.g., buttons) to the right */
-            gap: 10px;
-            margin-top: 10px;
-        }
-    </style>
+    <title>{{INITIAL_PAGE_TITLE}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script id="site-config-data" type="application/json">{{SITE_CONFIG_JSON}}</script>
 </head>
 <body>
     <div class="site-container">
         <header class="site-header">
-            <a href="javascript:void(0)" onclick="navigateTo('/')"><h1>Shaffer Con Inc.</h1></a>
+            <div class="header-content">
+                <a href="javascript:void(0)" onclick="navigateTo('/')" class="logo-link"><h1>{{COMPANY_NAME_H1}}</h1></a>
+                <div class="header-actions">
+                    <div class="ai-search-container">
+                        <input type="text" id="aiSearchInput" placeholder="Search for a page..." aria-label="Search for a page">
+                        <button id="aiSearchButton" aria-label="Search">Search</button>
+                    </div>
+                    <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+                </div>
+            </div>
         </header>
 
         <nav id="dynamic-menu-container">
-            <!-- Dropdown menu will be injected here by JavaScript -->
             <p>Loading menu...</p>
         </nav>
 
@@ -99,19 +34,54 @@
         </main>
 
         <footer class="site-footer">
-            <p>&copy; <span id="current-year"></span> Shaffer Con Inc. All rights reserved.</p>
+            <p>&copy; <span id="current-year"></span> {{COMPANY_NAME_FOOTER}} All rights reserved.</p>
         </footer>
     </div>
 
     <script>
+        let siteConfig = {};
+        try {
+            const configScriptElement = document.getElementById('site-config-data');
+            if (configScriptElement) {
+                siteConfig = JSON.parse(configScriptElement.textContent || '{}');
+            } else {
+                console.error('Site config data script tag not found.');
+                siteConfig = { companyName: "Web App" }; // Fallback
+            }
+        } catch (e) {
+            console.error('Error parsing site config data:', e);
+            siteConfig = { companyName: "Web App" }; // Fallback
+        }
+
         document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // Theme related constants and functions that can be global
+        const currentTheme = localStorage.getItem('theme');
+        
+        function applyTheme(theme) {
+            const themeToggleBtn = document.getElementById('theme-toggle'); // Get button inside function for safety
+            if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+                if(themeToggleBtn) themeToggleBtn.textContent = '☀️';
+            } else {
+                document.body.classList.remove('dark-mode');
+                if(themeToggleBtn) themeToggleBtn.textContent = '🌓';
+            }
+        }
+
+        // Initial theme application (can be before DOMContentLoaded for critical elements like body class)
+        // but button text content should be after DOM ready or handled safely as above.
+        if (currentTheme) {
+            document.body.classList.toggle('dark-mode', currentTheme === 'dark');
+        } else {
+            document.body.classList.remove('dark-mode'); // Default to light if no theme stored
+        }
 
         async function fetchPageData(path) {
             const contentElement = document.getElementById('page-content');
             const menuContainer = document.getElementById('dynamic-menu-container');
             
-            contentElement.innerHTML = '<p>Loading page content...</p>';
-            // Do not clear menu immediately, wait for new menu data
+            contentElement.innerHTML = '<p class="loading-text">Loading page content...</p>';
 
             const fetchPath = path === '/' || path === '' ? '/' : path.startsWith('/') ? path : '/' + path;
             try {
@@ -121,15 +91,12 @@
                 }
                 const data = await response.json();
 
-                // Inject main content
-                contentElement.innerHTML = data.main_content_html || '<p>No content received.</p>';
-
-                // Build and inject dynamic menu
+                contentElement.innerHTML = data.main_content_html || '<p class="error-text">No content received.</p>';
                 buildAndInjectMenu(data.menu_items || [], fetchPath, menuContainer);
 
             } catch (error) {
-                contentElement.innerHTML = `<h1>Error Loading Page</h1><p>Could not fetch page data for <code>${fetchPath}</code>. ${error.message}</p>`;
-                menuContainer.innerHTML = '<p>Menu unavailable due to page load error.</p>'; // Clear or set error for menu
+                contentElement.innerHTML = `<h1 class="error-title">Error Loading Page</h1><p class="error-text">Could not fetch page data for <code>${fetchPath}</code>. ${error.message}</p>`;
+                menuContainer.innerHTML = '<p class="error-text">Menu unavailable due to page load error.</p>';
                 console.error("Failed to fetch page data:", error);
             }
         }
@@ -145,7 +112,7 @@
                 optionsHtml += `<option value="${item.path}"${selectedAttr}>${item.name}</option>`;
             });
 
-            const dropdownJs = "onchange=\"if(this.value && this.value !== window.location.pathname) navigateTo(this.value);\"";
+            const dropdownJs = "onchange='if(this.value && this.value !== window.location.pathname) navigateTo(this.value);'";
             menuContainerElement.innerHTML = `
                 <label for="page-navigation-select">Quick Navigation:</label>
                 <select name="page-navigation-select" id="page-navigation-select" ${dropdownJs}>
@@ -157,15 +124,115 @@
 
         function navigateTo(path) {
             const displayPath = path === '/' || path === '' ? '/' : path.startsWith('/') ? path : '/' + path;
-            if (window.location.pathname !== displayPath || window.location.search !== '') { // Avoid pushing same state if only hash changes or no change
+            if (window.location.pathname !== displayPath || window.location.search !== '') {
                  history.pushState({ path: displayPath }, '', displayPath);
             }
+            document.title = generateTitleForPath(displayPath);
             fetchPageData(displayPath);
         }
+        
+        async function performAiSearch() {
+            const searchInput = document.getElementById('aiSearchInput');
+            const query = searchInput.value.trim();
+            if (!query) {
+                // Consider a more styled notification instead of alert
+                // For now, alert is fine.
+                alert("Please enter a search query.");
+                return;
+            }
 
+            const contentElement = document.getElementById('page-content');
+            const menuContainer = document.getElementById('dynamic-menu-container');
+            const searchButton = document.getElementById('aiSearchButton');
+            const originalButtonText = searchButton.textContent;
+            
+            searchButton.textContent = 'Searching...';
+            searchButton.disabled = true;
+            searchInput.disabled = true;
+
+            contentElement.innerHTML = `<p class="loading-text">Searching for content related to: "${query}"...</p>`;
+
+            try {
+                const response = await fetch(`/ai_search?query=${encodeURIComponent(query)}`);
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({ error: "Unknown server error", details: "Server returned an error status without JSON."}));
+                    throw new Error(`HTTP error! status: ${response.status}. ${errData.error}: ${errData.details || 'No additional details.'}`);
+                }
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(`Search Error: ${data.error}. ${data.details || ''}`);
+                }
+
+                if (!data.new_path || typeof data.main_content_html === 'undefined') {
+                     throw new Error("AI response is missing new_path or main_content_html.");
+                }
+
+                const newPath = data.new_path;
+                const displayPath = newPath === '/' || newPath === '' ? '/' : newPath.startsWith('/') ? newPath : '/' + newPath;
+
+                history.pushState({ path: displayPath }, '', displayPath);
+                document.title = generateTitleForPath(displayPath);
+                contentElement.innerHTML = data.main_content_html || '<p class="info-text">Content generated, but it was empty.</p>';
+                buildAndInjectMenu(data.menu_items || [], displayPath, menuContainer);
+                
+            } catch (error) {
+                contentElement.innerHTML = `<h1 class="error-title">Error During Search</h1><p class="error-text">Could not retrieve content for query: <code>${query}</code>. ${error.message}</p>`;
+                console.error("Failed during AI search:", error);
+            } finally {
+                searchButton.textContent = originalButtonText;
+                searchButton.disabled = false;
+                searchInput.disabled = false;
+            }
+        }
+
+        function generateTitleForPath(path) {
+            const baseTitle = siteConfig.companyName || "Web App";
+            if (path === '/' || path === '') return `${baseTitle} - Home`;
+            const name = path.substring(path.lastIndexOf('/') + 1);
+            let title = name.replace(/-/g, ' ').replace(/_/g, ' ');
+            title = title.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            return `${baseTitle} - ${title}`;
+        }
+        
         document.addEventListener('DOMContentLoaded', () => {
             const initialPath = window.location.pathname;
-            fetchPageData(initialPath);
+            const themeToggleButton = document.getElementById('theme-toggle'); // Define here
+
+            // Apply initial theme and button text content once DOM is ready
+            if (currentTheme) {
+                applyTheme(currentTheme); // This will set button text correctly
+            } else {
+                 applyTheme('light'); // Default if nothing stored, also sets button text
+            }
+
+            if (themeToggleButton) {
+                themeToggleButton.addEventListener('click', () => {
+                    let theme = 'light';
+                    if (!document.body.classList.contains('dark-mode')) {
+                        theme = 'dark';
+                    }
+                    localStorage.setItem('theme', theme);
+                    applyTheme(theme);
+                });
+            }
+
+            fetchPageData(initialPath); // Fetch initial page data
+
+            const searchButton = document.getElementById('aiSearchButton');
+            const searchInput = document.getElementById('aiSearchInput');
+
+            if (searchButton && searchInput) {
+                searchButton.addEventListener('click', performAiSearch);
+                searchInput.addEventListener('keypress', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        performAiSearch();
+                    }
+                });
+            } else {
+                console.error("Search button or input not found!");
+            }
         });
 
         window.addEventListener('popstate', (event) => {
