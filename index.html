@@ -19,7 +19,7 @@
                         <input type="text" id="aiSearchInput" placeholder="Search for a page..." aria-label="Search for a page">
                         <button id="aiSearchButton" aria-label="Search">Search</button>
                     </div>
-                    <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+                    <button id="theme-toggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
                 </div>
             </div>
         </header>
@@ -59,13 +59,13 @@
         const currentTheme = localStorage.getItem('theme');
         
         function applyTheme(theme) {
-            const themeToggleBtn = document.getElementById('theme-toggle'); // Get button inside function for safety
+            const themeToggleBtn = document.getElementById('theme-toggle');
             if (theme === 'dark') {
                 document.body.classList.add('dark-mode');
-                if(themeToggleBtn) themeToggleBtn.textContent = '☀️';
+                if(themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
             } else {
                 document.body.classList.remove('dark-mode');
-                if(themeToggleBtn) themeToggleBtn.textContent = '🌓';
+                if(themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
             }
         }
 

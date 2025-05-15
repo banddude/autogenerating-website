@@ -245,7 +245,7 @@ main#page-content a:hover {
     padding-bottom: 0;
     margin-bottom: 25px;
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: center;
     font-size: clamp(1.5em, 0.9em + 3vw, 2.2em);
     text-align: center;
@@ -258,6 +258,7 @@ main#page-content a:hover {
     text-align: center;
     flex-shrink: 0;
     color: var(--button-bg);
+    transform: translateY(0.15em); /* Nudge icon down slightly */
 }
 
 #page-content section p {
@@ -320,6 +321,8 @@ main#page-content a:hover {
     border-radius: var(--border-radius-small);
     font-family: monospace;
     color: var(--text-color);
+    overflow-wrap: break-word;
+    word-break: break-all;
 }
 
 /* Form Styling (General - for AI generated forms) */
